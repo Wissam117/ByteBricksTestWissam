@@ -1,0 +1,122 @@
+[
+    {
+      "content": "AI (Artificial Intelligence) refers to systems or machines that can perform tasks that typically require human intelligence. These include tasks such as visual perception, speech recognition, decision-making, and language translation. Modern AI systems are designed to learn from experience, adapt to new inputs, and perform tasks like humans.",
+      "source": "AI Fundamentals, page 5",
+      "metadata": {
+        "category": "overview",
+        "level": "beginner"
+      }
+    },
+    {
+      "content": "Machine Learning is a subset of AI that focuses on the development of algorithms and statistical models that enable computers to perform tasks without explicit instructions. Instead, they rely on patterns and inference. Machine learning algorithms build a mathematical model based on sample data, known as 'training data', to make predictions or decisions without being explicitly programmed to perform the task.",
+      "source": "AI Fundamentals, page 12",
+      "metadata": {
+        "category": "overview",
+        "level": "beginner"
+      }
+    },
+    {
+      "content": "Deep Learning is a subset of machine learning based on artificial neural networks with multiple layers. These neural networks attempt to simulate the behavior of the human brain—albeit far from matching its ability—allowing it to 'learn' from large amounts of data. Deep learning is what drives many AI systems today, from voice assistants to self-driving cars.",
+      "source": "AI Fundamentals, page 20",
+      "metadata": {
+        "category": "overview",
+        "level": "intermediate"
+      }
+    },
+    {
+      "content": "Natural Language Processing (NLP) is a field of AI that focuses on the interaction between computers and humans through natural language. The ultimate objective of NLP is to enable computers to understand, interpret, and generate human language in a valuable way. NLP applications include chatbots, sentiment analysis, and language translation.",
+      "source": "AI Applications, Chapter 3",
+      "metadata": {
+        "category": "applications",
+        "level": "intermediate"
+      }
+    },
+    {
+      "content": "Computer Vision is an interdisciplinary field that deals with how computers can gain high-level understanding from digital images or videos. It seeks to automate tasks that the human visual system can do. Computer vision tasks include methods for acquiring, processing, analyzing and understanding digital images, and extraction of data from the real world to produce information.",
+      "source": "AI Applications, Chapter 4",
+      "metadata": {
+        "category": "applications",
+        "level": "intermediate"
+      }
+    },
+    {
+      "content": "Reinforcement Learning is an area of machine learning concerned with how software agents ought to take actions in an environment in order to maximize the notion of cumulative reward. Reinforcement learning differs from supervised learning in that labeled input/output pairs need not be presented, and sub-optimal actions need not be explicitly corrected.",
+      "source": "Advanced Machine Learning, Chapter 5",
+      "metadata": {
+        "category": "techniques",
+        "level": "advanced"
+      }
+    },
+    {
+      "content": "Few-shot learning is a type of machine learning approach where the algorithm must learn to recognize new classes with only a few examples. This contrasts with traditional machine learning algorithms that typically require large amounts of labeled training data. Few-shot learning is particularly useful in scenarios where collecting large amounts of labeled data is expensive or impractical.",
+      "source": "AI Fundamentals, page 45",
+      "metadata": {
+        "category": "techniques",
+        "level": "advanced"
+      }
+    },
+    {
+      "content": "Transfer learning is a machine learning technique where a model developed for one task is reused as the starting point for a model on a second task. It is popular in deep learning because it allows us to train deep neural networks with relatively little data. This is very valuable in the field of data science, as most real-world problems don't have millions of labeled data points.",
+      "source": "Modern ML Strategies, Section 2.3",
+      "metadata": {
+        "category": "techniques",
+        "level": "intermediate"
+      }
+    },
+    {
+      "content": "RAG (Retrieval-Augmented Generation) is a technique that enhances large language models by retrieving relevant information from external knowledge sources before generating responses. This approach combines the strengths of retrieval-based methods (accessing factual information) with generative models (producing coherent text), resulting in more accurate and up-to-date responses while reducing hallucinations.",
+      "source": "AI Architecture Patterns, Chapter 7",
+      "metadata": {
+        "category": "architecture",
+        "level": "advanced"
+      }
+    },
+    {
+      "content": "Vector search is a technique used to find similar items in a large dataset by representing items as vectors in a high-dimensional space and measuring the distance between them. In AI applications, vector search enables semantic search, recommendation systems, and anomaly detection by finding items that are conceptually similar rather than just matching keywords.",
+      "source": "ML Basics, Chapter 7",
+      "metadata": {
+        "category": "techniques",
+        "level": "intermediate"
+      }
+    },
+    {
+      "content": "Embeddings in machine learning are dense vector representations of data in a continuous vector space. They capture semantic meanings of the objects they represent, allowing AI systems to understand relationships between different items. Text embeddings, for instance, place semantically similar words close to each other in the vector space, enabling machines to understand language context and meaning.",
+      "source": "Data Representation in AI, Section 3.4",
+      "metadata": {
+        "category": "techniques",
+        "level": "intermediate"
+      }
+    },
+    {
+      "content": "Transformer architecture is a neural network architecture introduced in 2017 that has revolutionized natural language processing. It relies on the self-attention mechanism to process input sequences in parallel, making it highly efficient for handling long-range dependencies in text. Transformers form the foundation of models like BERT, GPT, and T5, powering many modern AI applications from chatbots to content generation.",
+      "source": "Neural Network Architectures, Chapter 8",
+      "metadata": {
+        "category": "architecture",
+        "level": "advanced"
+      }
+    },
+    {
+      "content": "AI Ethics is the branch of ethics that deals with the moral implications of creating artificial intelligence. Key concerns include privacy, bias and fairness, transparency, accountability, and the long-term impacts of increasingly capable AI systems. Responsible AI development requires ongoing consideration of these ethical dimensions throughout the design, development, and deployment processes.",
+      "source": "Ethics in Technology, Chapter 5",
+      "metadata": {
+        "category": "ethics",
+        "level": "intermediate"
+      }
+    },
+    {
+      "content": "Small businesses can adopt AI by starting with off-the-shelf solutions for specific use cases like customer service chatbots, predictive maintenance, or sales forecasting. The implementation process typically involves identifying business problems AI can solve, selecting appropriate tools, preparing data, conducting a pilot project, and gradually scaling successful applications. Cloud-based AI services have made advanced capabilities accessible without requiring extensive in-house expertise.",
+      "source": "AI for Small Business, Chapter 2",
+      "metadata": {
+        "category": "business",
+        "level": "beginner"
+      }
+    },
+    {
+      "content": "AI implementation costs for small businesses vary widely depending on the solution complexity. Basic chatbots or pre-built AI tools might cost $20-500 per month as SaaS subscriptions. Custom AI solutions typically range from $20,000-$100,000 for development, plus ongoing maintenance. Cloud-based AI services from Google, Microsoft, or Amazon offer pay-as-you-go pricing that scales with usage, making them cost-effective entry points for smaller organizations.",
+      "source": "AI Implementation Guide, Section 4.2",
+      "metadata": {
+        "category": "business",
+        "level": "beginner"
+      }
+    }
+  ]

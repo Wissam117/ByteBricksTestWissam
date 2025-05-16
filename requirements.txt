@@ -1,0 +1,30 @@
+# requirements.txt
+
+# Core dependencies
+fastapi>=0.104.0
+uvicorn>=0.24.0
+pydantic>=2.4.2
+langchain>=0.0.320
+langchain-core>=0.1.0
+langgraph>=0.0.19
+python-multipart>=0.0.6
+python-jose>=3.3.0
+passlib>=1.7.4
+chromadb>=0.4.17
+pytest>=7.4.3
+httpx>=0.25.1
+
+# LLM providers - OpenAI (paid)
+langchain-openai>=0.0.2
+
+# LLM providers - Open Source Alternatives (free)
+sentence-transformers>=2.2.2  # For embeddings
+langchain-community>=0.0.10   # For HuggingFace models
+huggingface-hub>=0.19.0       # For accessing HuggingFace models
+
+# CPU-only models (no CUDA/GPU required)
+ctransformers>=0.2.24        # Lightweight CPU inference for transformer models
+
+# Optional for voice interface
+pyttsx3>=2.90
+SpeechRecognition>=3.8.1
