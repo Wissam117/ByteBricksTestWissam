@@ -5,7 +5,7 @@
 -r requirements.txt
 
 # Add local model support
-llama-cpp-python>=0.2.11
+
 
 # Note: This requires C++ compiler and build tools
 # On Ubuntu/Debian: sudo apt-get install build-essential cmake

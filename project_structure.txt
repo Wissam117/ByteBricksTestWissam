@@ -1,0 +1,76 @@
+.
+├── Dockerfile
+├── README.md
+├── app
+│   ├── __init__.py
+│   ├── __pycache__
+│   │   ├── __init__.cpython-310.pyc
+│   │   └── main.cpython-310.pyc
+│   ├── api
+│   │   ├── __init__.py
+│   │   ├── __pycache__
+│   │   │   ├── __init__.cpython-310.pyc
+│   │   │   ├── auth.cpython-310.pyc
+│   │   │   └── concierge.cpython-310.pyc
+│   │   ├── auth.py
+│   │   └── concierge.py
+│   ├── core
+│   │   ├── __init__.py
+│   │   ├── __pycache__
+│   │   │   ├── __init__.cpython-310.pyc
+│   │   │   ├── config.cpython-310.pyc
+│   │   │   └── security.cpython-310.pyc
+│   │   ├── config.py
+│   │   ├── errors.py
+│   │   └── security.py
+│   ├── main.py
+│   ├── models
+│   │   ├── Llama-3.2-3B-Instruct-IQ4_XS.gguf
+│   │   ├── __init__.py
+│   │   ├── __pycache__
+│   │   │   ├── __init__.cpython-310.pyc
+│   │   │   ├── task.cpython-310.pyc
+│   │   │   └── user.cpython-310.pyc
+│   │   ├── task.py
+│   │   └── user.py
+│   ├── services
+│   │   ├── __init__.py
+│   │   ├── __pycache__
+│   │   │   ├── __init__.cpython-310.pyc
+│   │   │   ├── concierge.cpython-310.pyc
+│   │   │   ├── memory.cpython-310.pyc
+│   │   │   ├── self_grading.cpython-310.pyc
+│   │   │   ├── self_reflection.cpython-310.pyc
+│   │   │   └── simple_concierge.cpython-310.pyc
+│   │   ├── concierge.py
+│   │   ├── memory.py
+│   │   ├── self_grading.py
+│   │   ├── self_reflection.py
+│   │   └── tools
+│   │       ├── __init__.py
+│   │       ├── __pycache__
+│   │       │   ├── __init__.cpython-310.pyc
+│   │       │   ├── manage_tasks.cpython-310.pyc
+│   │       │   └── retrieve_docs.cpython-310.pyc
+│   │       ├── manage_tasks.py
+│   │       └── retrieve_docs.py
+│   └── utils
+│       ├── __init__.py
+│       ├── __pycache__
+│       │   ├── __init__.cpython-310.pyc
+│       │   └── vector_store.cpython-310.pyc
+│       └── vector_store.py
+├── data
+│   └── knowledge_base.json
+├── docker-compose.yml
+├── project_structure.txt
+├── requirements-local.txt
+├── requirements.txt
+├── startup-check.py
+└── tests
+    ├── conftest.py
+    ├── test_api.py
+    ├── test_services.py
+    └── test_tools.py
+
+16 directories, 57 files

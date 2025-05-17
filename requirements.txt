@@ -1,9 +1,9 @@
-# requirements.txt
-
 # Core dependencies
 fastapi>=0.104.0
 uvicorn>=0.24.0
 pydantic>=2.4.2
+pydantic-settings>=2.0.0  # Required for BaseSettings
+pydantic[email]>=2.4.2    # Required for EmailStr validation
 langchain>=0.0.320
 langchain-core>=0.1.0
 langgraph>=0.0.19
@@ -22,9 +22,13 @@ sentence-transformers>=2.2.2  # For embeddings
 langchain-community>=0.0.10   # For HuggingFace models
 huggingface-hub>=0.19.0       # For accessing HuggingFace models
 
-# Optional - uncomment if needed and system has appropriate C++ compiler
-# llama-cpp-python>=0.2.11    # For running Llama models locally
+# Local LLM inference with CUDA support
+llama-cpp-python>=0.2.11      # For running Llama models locally with CUDA
+ctransformers[cuda]>=0.2.27    # Alternative LLM inference with CUDA
 
 # Optional for voice interface
 pyttsx3>=2.90
 SpeechRecognition>=3.8.1
+
+# Additional ML dependencies
+torch>=2.0.0                  # For CUDA detection and tensor operations

@@ -1,6 +1,6 @@
 # app/services/tools/manage_tasks.py
 
-from typing import Dict, List, Any, Optional, Union
+from typing import Dict, List, Any, Optional, Union, Type
 from langchain.tools import BaseTool
 from pydantic import BaseModel, Field
 
@@ -11,13 +11,22 @@ class ManageTasksInput(BaseModel):
     task: Optional[Dict[str, str]] = Field(None, description="Task details when adding")
 
 class ManageTasksTool(BaseTool):
-    name = "manage_tasks"
-    description = "Manages user tasks like scheduling demos and follow-ups"
-    args_schema = ManageTasksInput
+    name: str = "manage_tasks"
+    description: str = "Manages user tasks like scheduling demos and follow-ups"
+    args_schema: Type[BaseModel] = ManageTasksInput
     
-    def __init__(self):
-        super().__init__()
-        self.tasks: Dict[str, TaskList] = {}
+    # Declare tasks as a Pydantic field
+    tasks: Dict[str, TaskList] = Field(default_factory=dict, description="User task storage")
+    
+    # Allow arbitrary types for the tasks field
+    class Config:
+        arbitrary_types_allowed = True
+    
+    def __init__(self, **kwargs):
+        # Initialize with empty tasks dict if not provided
+        if 'tasks' not in kwargs:
+            kwargs['tasks'] = {}
+        super().__init__(**kwargs)
     
     def _get_user_tasks(self, user_id: str) -> TaskList:
         """Get task list for a specific user."""

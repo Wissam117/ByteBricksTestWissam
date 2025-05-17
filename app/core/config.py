@@ -1,6 +1,6 @@
-# app/core/config.py - Updated version
+# app/core/config.py
 
-from pydantic import BaseSettings
+from pydantic_settings import BaseSettings  # Updated import
 from typing import Optional
 
 class Settings(BaseSettings):

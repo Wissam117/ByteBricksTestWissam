@@ -2,6 +2,7 @@
 
 from typing import Dict, List, Any, Optional
 import uuid
+import os
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.agents import create_openai_tools_agent
@@ -26,36 +27,106 @@ class ConciergeService:
                 # Note: Requires API key and payment
                 from langchain_openai import ChatOpenAI
                 self.llm = ChatOpenAI(temperature=0, model="gpt-4")
+                print("Using OpenAI GPT-4")
             else:
-                # Try to use a lightweight CPU-based model first (no CUDA required)
+                # Try to use local model with GPU if available
                 try:
-                    # CTransformers is a lightweight CPU inference engine
-                    from langchain_community.llms import CTransformers
+                    # Check if CUDA is available
+                    try:
+                        import torch
+                        cuda_available = torch.cuda.is_available()
+                        print(f"CUDA available: {cuda_available}")
+                        if cuda_available:
+                            print(f"CUDA device count: {torch.cuda.device_count()}")
+                            print(f"Current CUDA device: {torch.cuda.current_device()}")
+                    except ImportError:
+                        cuda_available = False
+                        print("PyTorch not installed, CUDA unavailable")
                     
-                    # Use a smaller model that works well on CPU
-                    self.llm = CTransformers(
-                        model="TheBloke/Llama-2-7B-Chat-GGUF",
-                        model_file="llama-2-7b-chat.Q4_K_M.gguf",  # Quantized for CPU
-                        model_type="llama",
-                        config={
-                            'max_new_tokens': 1024,
-                            'temperature': 0.2,
-                            'context_length': 2048,
-                        }
-                    )
-                    print("Using CTransformers with Llama-2 (CPU-only)")
+                    # Path to your local model
+                    local_model_path = os.getenv('LOCAL_MODEL_PATH', 'app/models/Llama-3.2-3B-Instruct-IQ4_XS.gguf')
+                    
+                    if os.path.exists(local_model_path):
+                        # Try LlamaCpp first (preferred for GGUF files)
+                        try:
+                            from langchain_community.llms import LlamaCpp
+                            
+                            if cuda_available:
+                                self.llm = LlamaCpp(
+                                    model_path=local_model_path,
+                                    temperature=0.2,
+                                    max_tokens=1024,
+                                    n_ctx=4096,  # Context length
+                                    n_gpu_layers=35,  # Use GPU layers (adjust based on your model)
+                                    n_batch=512,  # Batch size for processing
+                                    verbose=False,
+                                )
+                                print(f"Using LlamaCpp with CUDA acceleration: {local_model_path}")
+                            else:
+                                self.llm = LlamaCpp(
+                                    model_path=local_model_path,
+                                    temperature=0.2,
+                                    max_tokens=1024,
+                                    n_ctx=4096,
+                                    n_gpu_layers=0,  # CPU only
+                                    n_batch=8,  # Smaller batch for CPU
+                                    verbose=False,
+                                )
+                                print(f"Using LlamaCpp with CPU only: {local_model_path}")
+                        except ImportError:
+                            print("LlamaCpp not available, trying CTransformers...")
+                            # Fallback to CTransformers
+                            from langchain_community.llms import CTransformers
+                            
+                            gpu_layers = 35 if cuda_available else 0
+                            self.llm = CTransformers(
+                                model=local_model_path,
+                                model_type="llama",
+                                config={
+                                    'max_new_tokens': 1024,
+                                    'temperature': 0.2,
+                                    'context_length': 4096,
+                                    'gpu_layers': gpu_layers,
+                                    'threads': 4,
+                                }
+                            )
+                            print(f"Using CTransformers with {'GPU' if cuda_available else 'CPU'}: {local_model_path}")
+                    else:
+                        # Model file not found, try downloading a model
+                        print(f"Local model not found at: {local_model_path}")
+                        print("Attempting to download a model...")
+                        
+                        # Try CTransformers with auto-download
+                        from langchain_community.llms import CTransformers
+                        
+                        gpu_layers = 35 if cuda_available else 0
+                        self.llm = CTransformers(
+                            model="TheBloke/Llama-2-7B-Chat-GGUF",
+                            model_file="llama-2-7b-chat.Q4_K_M.gguf",
+                            model_type="llama",
+                            config={
+                                'max_new_tokens': 1024,
+                                'temperature': 0.2,
+                                'context_length': 2048,
+                                'gpu_layers': gpu_layers,
+                                'threads': 4,
+                            }
+                        )
+                        print(f"Using CTransformers with downloaded model ({'GPU' if cuda_available else 'CPU'})")
+                        
                 except Exception as e:
-                    print(f"Could not load CTransformers model: {e}")
+                    print(f"Could not load local model: {e}")
                     
                     # Fallback to Hugging Face Inference API
                     try:
                         from langchain_community.llms import HuggingFaceEndpoint
                         # Try a smaller model that's publicly accessible
                         self.llm = HuggingFaceEndpoint(
-                            repo_id="google/flan-t5-base",  # Small model, no token needed
-                            max_length=1024
+                            repo_id="microsoft/DialoGPT-medium",
+                            max_length=1024,
+                            temperature=0.7,
                         )
-                        print("Using Hugging Face Inference API with flan-t5")
+                        print("Using Hugging Face Inference API with DialoGPT")
                     except Exception as e:
                         print(f"Could not load HuggingFace model: {e}")
                         
@@ -63,33 +134,57 @@ class ConciergeService:
                         print("Falling back to minimal text generation")
                         from langchain.llms import FakeListLLM
                         self.llm = FakeListLLM(
-                            responses=["I can provide general assistance, but I'm currently running in a limited mode without access to a full language model."]
+                            responses=[
+                                "I can provide general assistance, but I'm currently running in a limited mode without access to a full language model.",
+                                "For full functionality, please configure an OpenAI API key or ensure a local model is properly installed.",
+                                "I can still help with task management and accessing the knowledge base."
+                            ]
                         )
         else:
             self.llm = llm
         
         # Set up vector store and tools
-        self.vector_store = VectorStore(settings.KNOWLEDGE_BASE_PATH)
-        self.retrieve_docs_tool = RetrieveDocsTool(self.vector_store)
-        self.manage_tasks_tool = ManageTasksTool()
-        self.tools = [self.retrieve_docs_tool, self.manage_tasks_tool]
-        
-        # Set up services
-        self.self_grading = SelfGradingService(self.llm)
-        self.self_reflection = SelfReflectionService()
-        self.memory = MemoryService()
-        
-        # Set up agent
-        self.agent = self._create_agent()
-        
-        # Set up workflow
-        self.workflow = self._create_workflow()
-        
-        # Session trackers
-        self.sessions: Dict[str, Any] = {}
+        try:
+            self.vector_store = VectorStore(settings.KNOWLEDGE_BASE_PATH)
+            self.retrieve_docs_tool = RetrieveDocsTool(self.vector_store)
+            self.manage_tasks_tool = ManageTasksTool()
+            self.tools = [self.retrieve_docs_tool, self.manage_tasks_tool]
+            
+            # Set up services
+            self.self_grading = SelfGradingService(self.llm)
+            self.self_reflection = SelfReflectionService()
+            self.memory = MemoryService()
+            
+            # Set up agent
+            self.agent = self._create_agent()
+            
+            # Set up workflow
+            self.workflow = self._create_workflow()
+            
+            # Session trackers
+            self.sessions: Dict[str, Any] = {}
+            print("✅ ConciergeService initialized successfully")
+            
+        except Exception as e:
+            print(f"⚠️  Failed to initialize full ConciergeService: {e}")
+            # Continue with minimal functionality
+            self.vector_store = None
+            self.retrieve_docs_tool = None
+            self.manage_tasks_tool = ManageTasksTool()
+            self.tools = [self.manage_tasks_tool] if self.manage_tasks_tool else []
+            self.self_grading = None
+            self.self_reflection = SelfReflectionService()
+            self.memory = MemoryService()
+            self.agent = None
+            self.workflow = None
+            self.sessions: Dict[str, Any] = {}
+            print("⚠️  Running with limited functionality")
     
     def _create_agent(self):
         """Create the agent with tools."""
+        if not self.tools:
+            return None
+            
         # Base system prompt
         system_prompt = """You are an AI Concierge for small businesses looking to adopt AI technologies.
         You must answer questions about AI technologies, schedule demo calls, and keep a running to-do list.
@@ -105,13 +200,16 @@ class ConciergeService:
             ("system", system_prompt),
             MessagesPlaceholder(variable_name="chat_history"),
             ("human", "{input}"),
+            MessagesPlaceholder(variable_name="agent_scratchpad"),
         ])
         
         return create_openai_tools_agent(self.llm, self.tools, prompt)
     
     def _create_workflow(self):
         """Create the workflow graph that handles the conversation flow."""
-        
+        if not self.agent:
+            return None
+            
         def initial_state(inputs):
             """Initialize the state with inputs."""
             return {
@@ -151,7 +249,7 @@ class ConciergeService:
                       "transformer", "llm", "large language model", "deep learning", "training", 
                       "model", "rag", "retrieval", "vector"]
             
-            if any(term in user_input for term in ai_terms):
+            if self.retrieve_docs_tool and any(term in user_input for term in ai_terms):
                 return "retrieve_docs"
             
             # Check for task management keywords
@@ -166,6 +264,9 @@ class ConciergeService:
         
         def retrieve_docs(state):
             """Retrieve relevant documents and grade them."""
+            if not self.retrieve_docs_tool:
+                return "run_agent"
+                
             query = state["input"]
             session_id = state["session_id"]
             
@@ -173,33 +274,38 @@ class ConciergeService:
             result = self.retrieve_docs_tool._run(query)
             docs = result["docs"]
             
-            # Grade the retrieved documents
-            scores = self.self_grading.grade_retrieval(query, docs)
-            print(f"Retrieval scores: {scores}")
-            
-            # Check if the scores are above threshold
-            if self.self_grading.is_above_threshold(scores):
-                # Add documents to the state
-                state["retrieved_docs"] = docs
-                return "run_agent"
-            else:
-                # Try once more with a refined query
-                refined_query = f"{query} ai technology business"
-                refined_result = self.retrieve_docs_tool._run(refined_query)
-                refined_docs = refined_result["docs"]
+            # Grade the retrieved documents if self_grading is available
+            if self.self_grading:
+                scores = self.self_grading.grade_retrieval(query, docs)
+                print(f"Retrieval scores: {scores}")
                 
-                # Grade the refined retrieval
-                refined_scores = self.self_grading.grade_retrieval(query, refined_docs)
-                print(f"Refined retrieval scores: {refined_scores}")
-                
-                if self.self_grading.is_above_threshold(refined_scores):
-                    state["retrieved_docs"] = refined_docs
+                # Check if the scores are above threshold
+                if self.self_grading.is_above_threshold(scores):
+                    # Add documents to the state
+                    state["retrieved_docs"] = docs
                     return "run_agent"
                 else:
-                    # Return a response indicating knowledge gap
-                    return {
-                        "response": "I'm sorry, my knowledge base doesn't cover that topic. Is there something else about AI technologies I can help you with?"
-                    }
+                    # Try once more with a refined query
+                    refined_query = f"{query} ai technology business"
+                    refined_result = self.retrieve_docs_tool._run(refined_query)
+                    refined_docs = refined_result["docs"]
+                    
+                    # Grade the refined retrieval
+                    refined_scores = self.self_grading.grade_retrieval(query, refined_docs)
+                    print(f"Refined retrieval scores: {refined_scores}")
+                    
+                    if self.self_grading.is_above_threshold(refined_scores):
+                        state["retrieved_docs"] = refined_docs
+                        return "run_agent"
+                    else:
+                        # Return a response indicating knowledge gap
+                        return {
+                            "response": "I'm sorry, my knowledge base doesn't cover that topic. Is there something else about AI technologies I can help you with?"
+                        }
+            else:
+                # No grading available, just use the docs
+                state["retrieved_docs"] = docs
+                return "run_agent"
         
         def run_agent(state):
             """Run the agent to generate a response."""
@@ -283,10 +389,52 @@ class ConciergeService:
         
         session_id = self.sessions[session_key]
         
-        # Run the workflow
-        result = await self.workflow.ainvoke({
-            "question": question,
-            "session_id": session_id
-        })
+        # If workflow is not available, provide a simple response
+        if not self.workflow:
+            # Simple fallback response
+            if self.retrieve_docs_tool and any(term in question.lower() for term in ["ai", "artificial intelligence", "ml", "machine learning"]):
+                try:
+                    result = self.retrieve_docs_tool._run(question)
+                    docs = result["docs"]
+                    if docs:
+                        response = f"Based on my knowledge base:\n\n{docs[0]['content'][:500]}..."
+                    else:
+                        response = "I couldn't find specific information about that in my knowledge base."
+                except:
+                    response = "I'm currently running in limited mode. Please check the system configuration."
+            else:
+                response = "I'm currently running in limited mode. I can help with basic questions, but full functionality requires proper system configuration."
+            
+            return {"response": response}
         
-        return {"response": result["response"]}
+        # Run the workflow
+        try:
+            result = await self.workflow.ainvoke({
+                "question": question,
+                "session_id": session_id
+            })
+            return {"response": result["response"]}
+        except Exception as e:
+            print(f"Error in workflow: {e}")
+            return {"response": "I apologize, but I encountered an error processing your request. Please try again."}
+
+# Simple fallback service for compatibility
+class SimpleConciergeService:
+    """Simplified version of ConciergeService for fallback scenarios."""
+    
+    def __init__(self):
+        self.sessions = {}
+    
+    async def chat(self, user_id: str, question: str) -> Dict[str, Any]:
+        """Simple chat implementation."""
+        # Basic responses for common queries
+        question_lower = question.lower()
+        
+        if any(word in question_lower for word in ["hello", "hi", "hey"]):
+            response = "Hello! I'm your AI Concierge. How can I help you today?"
+        elif any(word in question_lower for word in ["help", "what can you do"]):
+            response = "I can help with AI technology questions and task management. However, I'm currently running in simplified mode."
+        else:
+            response = "I'm currently running in simplified mode. For full functionality, please ensure all dependencies are properly configured."
+        
+        return {"response": response}
