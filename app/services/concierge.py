@@ -56,7 +56,7 @@ class ConciergeService:
                                     model_path=local_model_path,
                                     temperature=0.2,
                                     max_tokens=1024,
-                                    n_ctx=4096,  # Context length
+                                    n_ctx=8192,  # Increased context length
                                     n_gpu_layers=35,  # Use GPU layers (adjust based on your model)
                                     n_batch=512,  # Batch size for processing
                                     verbose=False,
@@ -67,7 +67,7 @@ class ConciergeService:
                                     model_path=local_model_path,
                                     temperature=0.2,
                                     max_tokens=1024,
-                                    n_ctx=4096,
+                                    n_ctx=8192,  # Increased context length
                                     n_gpu_layers=0,  # CPU only
                                     n_batch=8,  # Smaller batch for CPU
                                     verbose=False,
@@ -348,8 +348,19 @@ class ConciergeService:
             
             return {"response": agent_response}
         
-        # Define the graph
-        workflow = StateGraph(inputs=["question", "session_id"])
+        # Define the graph - newer LangGraph versions don't use 'inputs' parameter
+        from typing import TypedDict
+        
+        class WorkflowState(TypedDict):
+            question: str
+            session_id: str
+            input: str
+            chat_history: list
+            custom_instructions: str
+            retrieved_docs: list
+            response: str
+        
+        workflow = StateGraph(WorkflowState)
         
         # Add nodes
         workflow.add_node("initial", initial_state)
