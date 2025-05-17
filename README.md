@@ -29,30 +29,34 @@ The application is designed to work with different LLM providers:
    - Requires: API key and payment
    - Advantages: High performance and reliability
 
-2. **CPU-based local inference (No GPU required)**:
-   - Uses `ctransformers` library - a lightweight CPU inference engine
-   - Works with quantized models (smaller, faster on CPU)
-   - No CUDA or GPU dependencies required
-   - Downloads model automatically on first use
+2. **Hugging Face Models (Free alternatives)**:
+   - Requires: Hugging Face API token (free to create)
+   - Options:
+     - Llama models from Meta (requires HF Pro for API access)
+     - Mistral models (open access)
+     - Many other open-source models
 
-3. **Hugging Face Models (Fallback option)**:
-   - Uses smaller models that don't require authentication
-   - Good for quick testing without complex setup
+3. **Local deployment options** (advanced):
+   - For local Llama deployment (requires C++ compiler):
+     ```bash
+     # Install required dependencies
+     sudo apt-get install build-essential
+     # Then install llama-cpp-python
+     pip install llama-cpp-python
+     ```
 
-To customize the LLM with a different CPU-friendly model:
+To customize the LLM:
 
 ```python
-# Example using a different quantized model with ctransformers
-from langchain_community.llms import CTransformers
+# Example to use a different HuggingFace model
+from langchain_community.llms import HuggingFaceEndpoint
 from app.services.concierge import ConciergeService
 
-cpu_model = CTransformers(
-    model="TheBloke/Phi-2-GGUF",  # Smaller model
-    model_file="phi-2.Q4_K_M.gguf",  # Quantized for CPU
-    model_type="phi",
-    config={'max_new_tokens': 512, 'temperature': 0.1}
+hf_model = HuggingFaceEndpoint(
+    repo_id="mistralai/Mistral-7B-Instruct-v0.2",
+    temperature=0.1
 )
-concierge = ConciergeService(llm=cpu_model)
+concierge = ConciergeService(llm=hf_model)
 ```
 
 ## Setup Instructions

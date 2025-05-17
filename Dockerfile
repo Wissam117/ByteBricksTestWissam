@@ -7,12 +7,11 @@ WORKDIR /app
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PYTHONPATH=/app \
-    CT_CORES=1
+    PYTHONPATH=/app
 
-# Install minimal system dependencies
+# Install system dependencies
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends gcc \
+    && apt-get install -y --no-install-recommends gcc g++ cmake build-essential \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -22,8 +21,9 @@ COPY requirements.txt .
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Create directory for downloaded models
-RUN mkdir -p /app/models
+# Uncomment if you want to install llama-cpp-python
+# Note: This could take a while to build
+# RUN pip install --no-cache-dir llama-cpp-python
 
 # Copy project
 COPY . .

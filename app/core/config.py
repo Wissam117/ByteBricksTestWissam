@@ -1,4 +1,4 @@
-# app/core/config.py
+# app/core/config.py - Updated version
 
 from pydantic import BaseSettings
 from typing import Optional
@@ -14,6 +14,10 @@ class Settings(BaseSettings):
     
     # LLM Settings
     OPENAI_API_KEY: Optional[str] = None
+    HUGGINGFACE_API_TOKEN: Optional[str] = None
+    
+    # Local model settings
+    LOCAL_MODEL_PATH: Optional[str] = None  # Path to local GGUF model
     
     # Rate limiting
     RATE_LIMIT_PER_MINUTE: int = 30
