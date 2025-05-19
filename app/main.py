@@ -80,7 +80,7 @@ def debug_info():
         "python_version": sys.version,
         "working_directory": os.getcwd(),
         "environment_variables": {
-            "LOCAL_MODEL_PATH": os.getenv("LOCAL_MODEL_PATH"),
+            "LOCAL_MODEL_PATH": "/mnt/g/Wissam/ByteBricksTestWissam/app/models/Llama-3.2-3B-Instruct-IQ4_XS.gguf",
             "OPENAI_API_KEY": "***" if os.getenv("OPENAI_API_KEY") else None,
             "HUGGINGFACE_API_TOKEN": "***" if os.getenv("HUGGINGFACE_API_TOKEN") else None,
         }

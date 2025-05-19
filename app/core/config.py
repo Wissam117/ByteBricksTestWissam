@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "AI Concierge"
     
     # Security
-    SECRET_KEY: str = "your-secret-key-here"  # Change in production
+    SECRET_KEY: str = "123abc"  # Change in production
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     
@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     RATE_LIMIT_PER_MINUTE: int = 30
     
     # Vector store
-    KNOWLEDGE_BASE_PATH: str = "./data/knowledge_base.json"
+    KNOWLEDGE_BASE_PATH: str = "/mnt/g/Wissam/ByteBricksTestWissam/data/knowledge_base.json"
 
     class Config:
         env_file = ".env"

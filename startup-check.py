@@ -54,6 +54,7 @@ modules_to_test = [
     'app.core.config',
     'app.models.user',
     'app.models.task',
+    'tests.conftest'
 ]
 
 failed_imports = []

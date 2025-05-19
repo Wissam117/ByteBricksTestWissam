@@ -210,24 +210,24 @@ class ConciergeService:
         if not self.agent:
             return None
             
-        def initial_state(inputs):
+        def initial_state(state):
             """Initialize the state with inputs."""
             return {
-                "input": inputs["question"],
-                "chat_history": self.memory.get_messages(inputs["session_id"]),
+                "input": state["question"],
+                "chat_history": self.memory.get_messages(state["session_id"]),
                 "custom_instructions": "",
-                "session_id": inputs["session_id"]
+                "session_id": state["session_id"]
             }
         
         def check_feedback(state):
             """Check if the message contains feedback commands."""
             user_input = state["input"].strip().lower()
             if user_input.startswith("/good_answer"):
-                return "handle_feedback"
+                return {"next": "handle_feedback"}
             elif user_input.startswith("/bad_answer"):
-                return "handle_feedback"
+                return {"next": "handle_feedback"}
             else:
-                return "check_retrieval_need"
+                return {"next": "check_retrieval_need"}
         
         def handle_feedback(state):
             """Process feedback commands."""
@@ -240,6 +240,7 @@ class ConciergeService:
             elif user_input.startswith("/bad_answer"):
                 self.self_reflection.apply_feedback(session_id, "bad_answer")
                 return {"response": "✓ I appreciate your feedback. I'll be more concise and cite sources explicitly."}
+            return state
         
         def check_retrieval_need(state):
             """Determine if retrieval is needed."""
@@ -250,115 +251,125 @@ class ConciergeService:
                       "model", "rag", "retrieval", "vector"]
             
             if self.retrieve_docs_tool and any(term in user_input for term in ai_terms):
-                return "retrieve_docs"
+                return {"next": "retrieve_docs"}
             
             # Check for task management keywords
             task_terms = ["schedule", "appointment", "demo", "meeting", "call", "todo", "to-do", 
                         "to do", "task", "list"]
             
             if any(term in user_input for term in task_terms):
-                return "run_agent"
+                return {"next": "run_agent"}
             
             # Default to running the agent directly
-            return "run_agent"
+            return {"next": "run_agent"}
         
         def retrieve_docs(state):
             """Retrieve relevant documents and grade them."""
             if not self.retrieve_docs_tool:
-                return "run_agent"
+                return {"next": "run_agent"}
                 
             query = state["input"]
             session_id = state["session_id"]
             
-            # Call the retrieve_docs tool
-            result = self.retrieve_docs_tool._run(query)
-            docs = result["docs"]
-            
-            # Grade the retrieved documents if self_grading is available
-            if self.self_grading:
-                scores = self.self_grading.grade_retrieval(query, docs)
-                print(f"Retrieval scores: {scores}")
+            try:
+                # Call the retrieve_docs tool
+                result = self.retrieve_docs_tool._run(query)
+                docs = result["docs"]
                 
-                # Check if the scores are above threshold
-                if self.self_grading.is_above_threshold(scores):
-                    # Add documents to the state
-                    state["retrieved_docs"] = docs
-                    return "run_agent"
-                else:
-                    # Try once more with a refined query
-                    refined_query = f"{query} ai technology business"
-                    refined_result = self.retrieve_docs_tool._run(refined_query)
-                    refined_docs = refined_result["docs"]
-                    
-                    # Grade the refined retrieval
-                    refined_scores = self.self_grading.grade_retrieval(query, refined_docs)
-                    print(f"Refined retrieval scores: {refined_scores}")
-                    
-                    if self.self_grading.is_above_threshold(refined_scores):
-                        state["retrieved_docs"] = refined_docs
-                        return "run_agent"
-                    else:
-                        # Return a response indicating knowledge gap
-                        return {
-                            "response": "I'm sorry, my knowledge base doesn't cover that topic. Is there something else about AI technologies I can help you with?"
-                        }
-            else:
-                # No grading available, just use the docs
-                state["retrieved_docs"] = docs
-                return "run_agent"
+                # Skip grading for now and just use the docs
+                # TODO: Fix self-grading compatibility with local LLM
+                print(f"Retrieved {len(docs)} documents")
+                return {
+                    "retrieved_docs": docs,
+                    "next": "run_agent"
+                }
+            except Exception as e:
+                print(f"Error in retrieve_docs: {e}")
+                return {"next": "run_agent"}
         
         def run_agent(state):
             """Run the agent to generate a response."""
             session_id = state["session_id"]
             
-            # Apply custom instructions based on feedback
-            custom_instruction = self.self_reflection.get_modified_prompt(session_id) or ""
-            state["custom_instructions"] = custom_instruction
-            
-            # Prepare the retrieved documents if available
-            docs_context = ""
-            if "retrieved_docs" in state and state["retrieved_docs"]:
-                docs = state["retrieved_docs"]
-                docs_context = "Based on my knowledge:\n\n"
-                for i, doc in enumerate(docs):
-                    docs_context += f"[Source: {doc['source']}]\n{doc['content']}\n\n"
+            try:
+                # Prepare context from retrieved documents
+                context = ""
+                if "retrieved_docs" in state and state["retrieved_docs"]:
+                    docs = state["retrieved_docs"]
+                    context = "Based on my knowledge:\n\n"
+                    for i, doc in enumerate(docs):
+                        context += f"[Source: {doc['source']}]\n{doc['content']}\n\n"
                 
-                # Add the context to the input
-                state["input"] = f"{state['input']}\n\nContext: {docs_context}"
-            
-            # Run the agent
-            response = self.agent.invoke({
-                "input": state["input"],
-                "chat_history": state["chat_history"],
-                "custom_instructions": state["custom_instructions"]
-            })
-            
-            # Extract the response content
-            if isinstance(response, AgentFinish):
-                agent_response = response.return_values["output"]
-            else:
-                agent_response = str(response)
-            
-            # Add messages to memory
-            self.memory.add_message(session_id, "human", state["input"])
-            self.memory.add_message(session_id, "ai", agent_response)
-            
-            # Apply decay to feedback score
-            self.self_reflection.apply_decay(session_id)
-            
-            return {"response": agent_response}
+                # Format chat history
+                chat_history = ""
+                if state["chat_history"]:
+                    for msg in state["chat_history"][-5:]:  # Last 5 messages for context
+                        if hasattr(msg, 'content'):
+                            content = msg.content
+                            msg_type = msg.type if hasattr(msg, 'type') else 'unknown'
+                        else:
+                            content = str(msg)
+                            msg_type = 'message'
+                        chat_history += f"{msg_type}: {content}\n"
+                
+                # Run the simple agent (LLM chain)
+                response = self.agent.invoke({
+                    "context": context,
+                    "chat_history": chat_history,
+                    "input": state["input"]
+                })
+                
+                # For LLMChain, response is a dict with 'text' key
+                if isinstance(response, dict) and 'text' in response:
+                    agent_response = response['text']
+                else:
+                    agent_response = str(response)
+                
+                # Add messages to memory
+                self.memory.add_message(session_id, "human", state["input"])
+                self.memory.add_message(session_id, "ai", agent_response)
+                
+                # Apply decay to feedback score
+                self.self_reflection.apply_decay(session_id)
+                
+                return {"response": agent_response}
+                
+            except Exception as e:
+                print(f"Error in run_agent: {e}")
+                import traceback
+                traceback.print_exc()
+                
+                # Fallback to direct LLM response
+                try:
+                    context = ""
+                    if "retrieved_docs" in state and state["retrieved_docs"]:
+                        docs = state["retrieved_docs"]
+                        context = "\n\nContext: "
+                        for doc in docs[:2]:  # Use first 2 docs
+                            context += f"{doc['content'][:200]}... "
+                    
+                    prompt = f"Question: {state['input']}{context}\n\nAnswer:"
+                    response = self.llm.invoke(prompt)
+                    return {"response": response}
+                except Exception as fallback_error:
+                    print(f"Fallback also failed: {fallback_error}")
+                    return {"response": "I apologize, but I encountered an error processing your request. Please try again."}
         
-        # Define the graph - newer LangGraph versions don't use 'inputs' parameter
-        from typing import TypedDict
+        # Define the state structure
+        from typing import TypedDict, Optional, List, Any
         
-        class WorkflowState(TypedDict):
+        class WorkflowState(TypedDict, total=False):
             question: str
             session_id: str
             input: str
-            chat_history: list
+            chat_history: List[Any]
             custom_instructions: str
-            retrieved_docs: list
-            response: str
+            retrieved_docs: Optional[List[Any]]
+            response: Optional[str]
+            next: Optional[str]
+        
+        # Create the workflow
+        from langgraph.graph import StateGraph, END
         
         workflow = StateGraph(WorkflowState)
         
@@ -370,18 +381,50 @@ class ConciergeService:
         workflow.add_node("retrieve_docs", retrieve_docs)
         workflow.add_node("run_agent", run_agent)
         
-        # Add edges
-        workflow.set_entry_point("initial")
-        workflow.add_edge("initial", "check_feedback")
-        workflow.add_edge("check_feedback", "handle_feedback")
-        workflow.add_edge("check_feedback", "check_retrieval_need")
-        workflow.add_edge("check_retrieval_need", "retrieve_docs")
-        workflow.add_edge("check_retrieval_need", "run_agent")
-        workflow.add_edge("retrieve_docs", "run_agent")
+        # Add conditional edges
+        def decide_next_step(state):
+            """Route to the next step based on the 'next' field."""
+            return state.get("next", END)
         
-        # Compile the graph
+        # Set entry point
+        workflow.set_entry_point("initial")
+        
+        # Add edges
+        workflow.add_edge("initial", "check_feedback")
+        
+        workflow.add_conditional_edges(
+            "check_feedback",
+            decide_next_step,
+            {
+                "handle_feedback": "handle_feedback",
+                "check_retrieval_need": "check_retrieval_need"
+            }
+        )
+        
+        workflow.add_edge("handle_feedback", END)
+        
+        workflow.add_conditional_edges(
+            "check_retrieval_need", 
+            decide_next_step,
+            {
+                "retrieve_docs": "retrieve_docs",
+                "run_agent": "run_agent"
+            }
+        )
+        
+        workflow.add_conditional_edges(
+            "retrieve_docs",
+            decide_next_step,
+            {
+                "run_agent": "run_agent",
+                END: END
+            }
+        )
+        
+        workflow.add_edge("run_agent", END)
+        
+        # Compile the workflow
         return workflow.compile()
-    
     async def chat(self, user_id: str, question: str) -> Dict[str, Any]:
         """
         Process a user message and generate a response.
